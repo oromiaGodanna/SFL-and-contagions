@@ -1,5 +1,6 @@
 Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40) {
-    "description: Simulate information diffusion in a social network using SFL model.
+    "
+    description: Simulate information diffusion in a social network using SFL model.
     args:
         N: Number of agents in the network
         alpha: Learning rate
@@ -61,8 +62,13 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
             # softmax to determine probabilities
             exp_values <- exp(beta[i] * c(Q_adopt, Q_reject))
             probabilities <- exp_values / sum(exp_values)
-            adopted <- sample(c(TRUE, FALSE), 1, prob = probabilities)
-            output$adopted[i + N * (t - 1)] <- adopted
+            if (length(initial_spreaders)) {
+                adopted <- sample(c(TRUE, FALSE), 1, prob = probabilities)
+                output$adopted[i + N * (t - 1)] <- adopted
+            }else {
+                adopted <- FALSE
+            }
+            
 
             # calculate reward based on decision, if doesn't adopt, reward is 7(random value less than ideology_mean)
             reward <- rnorm(1, mean = ifelse(adopted, ideology_mean, 7), sd = ideology_sd)
