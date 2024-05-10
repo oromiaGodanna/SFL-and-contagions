@@ -31,7 +31,6 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
 
     # Set initial spreaders randomly
     initial_spreaders <- sample(N, size = round(0.05 * N))
-    # print(length(initial_spreaders))
     output$adopted[initial_spreaders] <- TRUE
 
     for (t in 2:timesteps) {
