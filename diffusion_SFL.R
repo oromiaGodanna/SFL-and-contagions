@@ -8,6 +8,8 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
         beta_sd: Standard deviation of the softmax beta parameter
         graph: igraph object representing the social network
         timesteps: Number of timesteps to run the simulation
+    returns:
+        output: Dataframe containing the simulation results
     "
     
     ideology_mean <- 10
@@ -38,8 +40,9 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
             neighs_ids <- neighbors(graph, i)
             if (!output$adopted[i + N * (t - 2)]) { # check if not already a spreader in the previous timestep
                 if (length(neighs_ids) > 0) {
+                    
                     # check if any neighbor has at least 4 shared connections and has adopted the ideology
-                    meets_shared_connections <- sapply(neighs_ids, function(n) sum(neighs_ids %in% neighbors(graph, n)) > 4 && output$adopted[n + N * (t - 2)])
+                    meets_shared_connections <- sapply(neighs_ids, function(n) sum(neighs_ids %in% neighbors(graph, n)) > 3 && output$adopted[n + N * (t - 2)])
                     # check if any connections meet the condition
                     if (any(meets_shared_connections)) {
                         # social value 1 or 0 for simplicity
@@ -62,7 +65,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
             # softmax to determine probabilities
             exp_values <- exp(beta[i] * c(Q_adopt, Q_reject))
             probabilities <- exp_values / sum(exp_values)
-            if (length(initial_spreaders)) {
+            if (any(meets_shared_connections)) {
                 adopted <- sample(c(TRUE, FALSE), 1, prob = probabilities)
                 output$adopted[i + N * (t - 1)] <- adopted
             }else {
