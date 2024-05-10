@@ -43,7 +43,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
             }
 
             # Q-values for adopting and not adopting
-            # consider weight of adopting the ideology only if agent has social influence
+            # update value of adopting the ideology only if agent has social influence
             Q_adopt <- ifelse(social_value[i], weights[i, 1], 0) * personal_value[i] + weights[i, 3] * social_value[i]
             Q_reject <- weights[i, 2] * (1 - personal_value[i]) + weights[i, 3] * (1 - social_value[i]) # Weight for not adopting
             
