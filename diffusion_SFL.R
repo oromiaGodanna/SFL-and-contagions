@@ -1,4 +1,14 @@
 Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40) {
+    "description: Simulate information diffusion in a social network using SFL model.
+    args:
+        N: Number of agents in the network
+        alpha: Learning rate
+        beta_mu: Mean of the softmax beta parameter
+        beta_sd: Standard deviation of the softmax beta parameter
+        graph: igraph object representing the social network
+        timesteps: Number of timesteps to run the simulation
+    "
+    
     ideology_mean <- 10
     ideology_sd <- 1.5
     beta <- rnorm(N, beta_mu, beta_sd)
@@ -6,7 +16,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
 
     weights <- matrix(data = 0, nrow = N, ncol = 3) # weights for adopting ideology, not adopting, and social influence
 
-    personal_value <- rnorm(N, 0.5, 0.4) #  affinity towards the ideology
+    personal_value <- rnorm(N, 0.5, 0.45) #  affinity towards the ideology
     social_value <- rep(0.0, N) # no social influence to adopt the ideology
 
     output <- data.frame(
