@@ -18,7 +18,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
 
     # Set initial spreaders randomly
     initial_spreaders <- sample(N, size = round(0.05 * N))
-    print(length(initial_spreaders))
+    # print(length(initial_spreaders))
     output$adopted[initial_spreaders] <- TRUE
 
     for (t in 2:timesteps) {
@@ -27,7 +27,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
             neighs_ids <- neighbors(graph, i)
             if (!output$adopted[i + N * (t - 2)]) { # check if not already a spreader in the previous timestep
                 if (length(neighs_ids) > 0) {
-                    # check if any neighbor has at least 4 shared connections
+                    # check if any neighbor has at least 4 shared connections and has adopted the ideology
                     meets_shared_connections <- sapply(neighs_ids, function(n) sum(neighs_ids %in% neighbors(graph, n)) > 4 && output$adopted[n + N * (t - 2)])
                     # check if any connections meet the condition
                     if (any(meets_shared_connections)) {
@@ -46,15 +46,12 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
             # consider weight of adopting the ideology only if agent has social influence
             Q_adopt <- ifelse(social_value[i], weights[i, 1], 0) * personal_value[i] + weights[i, 3] * social_value[i]
             Q_reject <- weights[i, 2] * (1 - personal_value[i]) + weights[i, 3] * (1 - social_value[i]) # Weight for not adopting
-            print(c(Q_adopt, Q_reject))
             
 
             # softmax to determine probabilities
             exp_values <- exp(beta[i] * c(Q_adopt, Q_reject))
             probabilities <- exp_values / sum(exp_values)
-            print(probabilities)
             adopted <- sample(c(TRUE, FALSE), 1, prob = probabilities)
-            print(adopted)
             output$adopted[i + N * (t - 1)] <- adopted
 
             # calculate reward based on decision, if doesn't adopt, reward is 7(random value less than ideology_mean)
