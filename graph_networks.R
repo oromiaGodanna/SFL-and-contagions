@@ -2,11 +2,29 @@ library(igraph)
 library(tidyverse)
 
 create_small_world_network <- function(N, k, p) {
+    "
+    Create a small world network using the Watts-Strogatz model
+    Args:
+        N: Number of nodes in the network
+        k: Number of nearest neighbors to connect
+        p: Probability of rewiring an edge
+    Returns:
+        igraph object of the small world network
+    "
     g <- watts.strogatz.game(1, N, k, p, loops = FALSE, multiple = FALSE)
     return(g)
 }
 
 create_weighted_small_world <- function(N, k, p) {
+    "
+    Create a small world network using the Watts-Strogatz model with weighted edges
+    Args:
+        N: Number of nodes in the network
+        k: Number of nearest neighbors to connect
+        p: Probability of rewiring an edge
+    Returns:    
+        igraph object of the small world network
+    "
     g <- watts.strogatz.game(1, N, k, p, loops = FALSE, multiple = FALSE)
 
     E(g)$weight <- 0.2 # set initial weight for all edges assuming long ties
@@ -30,7 +48,14 @@ create_weighted_small_world <- function(N, k, p) {
 }
 
 create_barabasi_albert <- function(N, m) {
+    "
+    Create a Barabasi-Albert network
+    Args:
+        N: Number of nodes in the network
+        m: Number of edges to attach from a new node to existing nodes
+    Returns:
+        igraph object of the Barabasi-Albert network
+        "
     g <- sample_pa(N, m = m, directed = FALSE, algorithm = "psumtree")
-
     return(g)
 }
