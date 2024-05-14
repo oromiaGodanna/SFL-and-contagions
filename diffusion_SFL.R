@@ -11,7 +11,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
     returns:
         output: Dataframe containing the simulation results
     "
-    
+
     ideology_mean <- 10
     ideology_sd <- 1.5
     beta <- rnorm(N, beta_mu, beta_sd)
@@ -35,17 +35,30 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
 
     for (t in 2:timesteps) {
         for (i in 1:N) {
-
             neighs_ids <- neighbors(graph, i)
             if (!output$adopted[i + N * (t - 2)]) { # check if not already a spreader in the previous timestep
                 if (length(neighs_ids) > 0) {
-                    
                     # check if any neighbor has at least 4 shared connections and has adopted the ideology
-                    meets_shared_connections <- sapply(neighs_ids, function(n) sum(neighs_ids %in% neighbors(graph, n)) > 3 && output$adopted[n + N * (t - 2)])
-                    # check if any connections meet the condition
-                    if (any(meets_shared_connections)) {
-                        # social value 1 or 0 for simplicity
-                        social_value[i] <- 1
+                    # meets_shared_connections <- sapply(neighs_ids, function(n) sum(neighs_ids %in% neighbors(graph, n)) > 3 && output$adopted[n + N * (t - 2)])
+
+                    # check if any adopted neighbor is also a key influencer among its own neighbors
+                    connection_results <- lapply(neighs_ids, function(n) {
+                        adopted_neighbor_ids <- neighbors(graph, n)
+                        proportion_connected <- sum(adopted_neighbor_ids %in% neighs_ids) / length(neighs_ids)
+                        # criteria - adopted neighbor and proportion of shared connections > 0.5
+                        criteria <- output$adopted[n + N * (t - 2)] && proportion_connected > 0.5
+                        return(list(criteria = criteria, proportion = proportion_connected))
+                    })
+
+                    # Extract criteria and proportion information
+                    criteria <- sapply(connection_results, function(x) x$criteria)
+                    proportions <- sapply(connection_results, function(x) x$proportion)
+                    # print(paste("Agent:", i, "Criteria:", criteria, "Proportions:", proportions))
+                    
+                    # Check if any connections meet the condition
+                    if (any(criteria)) {
+                        # Assign social value based on the highest proportion among neighbors meeting the criteria
+                        social_value[i] <- max(proportions[criteria])
                     } else {
                         social_value[i] <- 0
                     }
@@ -59,18 +72,18 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, timesteps = 40
             # update value of adopting the ideology only if agent has social influence
             Q_adopt <- ifelse(social_value[i], weights[i, 1], 0) * personal_value[i] + weights[i, 3] * social_value[i]
             Q_reject <- weights[i, 2] * (1 - personal_value[i]) + weights[i, 3] * (1 - social_value[i]) # Weight for not adopting
-            
+
 
             # softmax to determine probabilities
             exp_values <- exp(beta[i] * c(Q_adopt, Q_reject))
             probabilities <- exp_values / sum(exp_values)
-            if (any(meets_shared_connections)) {
+            if (any(criteria)) {
                 adopted <- sample(c(TRUE, FALSE), 1, prob = probabilities)
                 output$adopted[i + N * (t - 1)] <- adopted
-            }else {
+            } else {
                 adopted <- FALSE
             }
-            
+
 
             # calculate reward based on decision, if doesn't adopt, reward is 7(random value less than ideology_mean)
             reward <- rnorm(1, mean = ifelse(adopted, ideology_mean, 7), sd = ideology_sd)
