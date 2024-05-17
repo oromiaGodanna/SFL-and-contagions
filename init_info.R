@@ -66,3 +66,42 @@ initialize_information <- function(num_info, num_types, mean_attractiveness = 5,
 
     return(info_df)
 }
+
+add_new_information <- function(info_df, num_new_info, num_types, mean_attractiveness = 5, sd_attractiveness = 1.5,
+                                lower_bound_attractiveness = 0, upper_bound_attractiveness = 10,
+                                lower_bound_popularity = 1, upper_bound_popularity = 10,
+                                lower_bound_novelty = 0, upper_bound_novelty = 10) {
+
+    '
+    create new information items and append to the existing information dataframe
+    Args:
+        info_df: dataframe containing existing information items'
+
+    new_ids <- (max(info_df$ID) + 1):(max(info_df$ID) + num_new_info)
+    
+
+    new_types <- sample(1:num_types, num_new_info, replace = TRUE)
+    
+
+    #maybe the attractiveness here should have more or less similar to the existing ones
+    new_attractiveness <- rtruncnorm(num_new_info, a = lower_bound_attractiveness,
+                                     b = upper_bound_attractiveness, mean = mean_attractiveness, sd = sd_attractiveness)
+    
+
+    new_popularity <- rep(lower_bound_popularity, num_new_info)
+    
+
+    new_novelty <- rep(upper_bound_novelty, num_new_info)
+    
+    new_info_df <- data.frame(
+        ID = new_ids,
+        Type = as.factor(new_types),
+        Attractiveness = new_attractiveness,
+        Popularity = new_popularity,
+        Novelty = new_novelty
+    )
+    
+    updated_info_df <- rbind(info_df, new_info_df)
+    
+    return(updated_info_df)
+}
