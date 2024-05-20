@@ -1,5 +1,20 @@
 library(truncnorm)
 
+# a function to normalize a vector between 0 and 1
+normalize <- function(x) (x - min(x)) / (max(x) - min(x))
+
+normalize_info_attributes <- function(info_df) {
+    "Normalize the attributes of information items to be between 0 and 1
+    args:
+        info_df: data frame with information items and attributes
+    returns:
+        info_df: data frame with normalized attributes"
+    info_df$Attractiveness <- normalize(info_df$Attractiveness)
+    info_df$Popularity <- normalize(info_df$Popularity)
+    info_df$Novelty <- normalize(info_df$Novelty)
+    return(info_df)
+}
+
 initialize_information <- function(num_info, num_types, mean_attractiveness = 5, sd_attractiveness = 1.5,
                                    mean_popularity = 5, sd_popularity = 1.5, mean_novelty = 5, sd_novelty = 1.5,
                                    lower_bound_attractiveness = 0, upper_bound_attractiveness = 10,
