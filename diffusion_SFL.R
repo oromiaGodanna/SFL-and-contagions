@@ -27,8 +27,10 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, info_df, times
     output <- data.frame(
         trial = rep(1:timesteps, each = N),
         agent = rep(1:N, timesteps),
-        preferences = I(replicate(N * timesteps, list())),
-        reward = rep(NA, timesteps * N)
+        preferences = I(replicate(N * timesteps, list())), 
+        reward = rep(NA, timesteps * N),
+        weights = I(replicate(N * timesteps, list())),
+        social_value = I(replicate(N * timesteps, list()))
     )
 
     # Assign one random preference (one information) to each agent
@@ -98,9 +100,12 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, info_df, times
             # clip delta to prevent excessively large updates
             delta <- max(min(delta, 1), -1)
             weights[i, chosen_start_index:chosen_end_index] <- weights[i, chosen_start_index:chosen_end_index] + alpha * delta * features_chosen
+
+            output$weights[idx] <- list(weights[i, ])
+            output$social_value[idx] <- list(social_value[i, ]) 
             
         }
     }
-    # maybe save weights and social_value as well ?
-    return(list(output = output, weights = weights, social_value = social_value))
+    ##
+    return(list(output = output))
 }
