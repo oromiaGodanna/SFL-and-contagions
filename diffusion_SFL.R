@@ -27,10 +27,9 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, info_df, times
     output <- data.frame(
         trial = rep(1:timesteps, each = N),
         agent = rep(1:N, timesteps),
-        preferences = I(replicate(N * timesteps, list())), 
+        preferences = I(replicate(N * timesteps, list())),
         reward = rep(NA, timesteps * N),
-        weights = I(replicate(N * timesteps, list())),
-        social_value = I(replicate(N * timesteps, list()))
+        social_weights = rep(NA, timesteps * N) # Store only social weights
     )
 
     # Assign one random preference (one information) to each agent
@@ -71,8 +70,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, info_df, times
                 Q_values[j] <- sum(weights[i, start_index:end_index] * features)
             }
 
-            # normalize Q-values to avoid large exponentials
-            Q_values <- Q_values - max(Q_values)
+           
             exp_values <- exp(beta[i] * Q_values)
             probabilities <- exp_values / sum(exp_values)
 
@@ -86,7 +84,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, info_df, times
 
             output$preferences[idx] <- list(choice)
 
-            reward <- rnorm(1, mean = info_df$Attractiveness[choice], sd = 0.1) # Smaller standard deviation to limit reward range
+            reward <- rnorm(1, mean = info_df$Attractiveness[choice], sd = 1) 
             output$reward[idx] <- reward
 
             actual_reward <- reward
@@ -94,15 +92,19 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, info_df, times
             delta <- actual_reward - Q_adopt
             # update weights for the chosen information item (index calculation)
             chosen_start_index <- (choice - 1) * total_features_per_info + 1
-            chosen_end_index <- chosen_start_index + num_attributes - ifelse(social_influence, 0, 1)
+            chosen_end_index <- chosen_start_index + total_features_per_info - 1
             features_chosen <- if (social_influence) c(info_df$Attractiveness[choice], info_df$Popularity[choice], info_df$Novelty[choice], social_value[i, choice]) else c(info_df$Attractiveness[choice], info_df$Popularity[choice], info_df$Novelty[choice])
             
             # clip delta to prevent excessively large updates
             delta <- max(min(delta, 1), -1)
             weights[i, chosen_start_index:chosen_end_index] <- weights[i, chosen_start_index:chosen_end_index] + alpha * delta * features_chosen
-
-            output$weights[idx] <- list(weights[i, ])
-            output$social_value[idx] <- list(social_value[i, ]) 
+            # print(weights)
+            # if (t> 20) break()
+            if (social_influence) {
+                social_weight_index <- chosen_end_index
+                print(weights[i, social_weight_index])
+                output$social_weights[idx] <- weights[i, social_weight_index]
+            }
             
         }
     }
