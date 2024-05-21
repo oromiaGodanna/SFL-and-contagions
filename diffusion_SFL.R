@@ -98,11 +98,8 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, info_df, times
             # clip delta to prevent excessively large updates
             delta <- max(min(delta, 1), -1)
             weights[i, chosen_start_index:chosen_end_index] <- weights[i, chosen_start_index:chosen_end_index] + alpha * delta * features_chosen
-            # print(weights)
-            # if (t> 20) break()
             if (social_influence) {
                 social_weight_index <- chosen_end_index
-                print(weights[i, social_weight_index])
                 output$social_weights[idx] <- weights[i, social_weight_index]
             }
             
