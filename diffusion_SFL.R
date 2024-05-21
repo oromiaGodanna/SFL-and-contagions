@@ -65,7 +65,7 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, info_df, times
             # calculate Q-values for each information item of the agent
             for (j in 1:num_info) {
                 start_index <- (j - 1) * total_features_per_info + 1
-                end_index <- start_index + num_attributes - 1
+                end_index <- start_index + total_features_per_info - 1
                 info_attributes <- c(info_df$Attractiveness[j], info_df$Popularity[j], info_df$Novelty[j])
                 features <- if (social_influence) c(info_attributes, social_value[i, j]) else info_attributes
                 Q_values[j] <- sum(weights[i, start_index:end_index] * features)
