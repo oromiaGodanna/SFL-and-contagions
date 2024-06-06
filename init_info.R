@@ -3,7 +3,7 @@ library(truncnorm)
 # a function to normalize a vector between 0 and 1
 normalize <- function(x) (x - min(x)) / (max(x) - min(x))
 
-normalize_fixed_bounds <- function(x, lower_bound, upper_bound) {
+normalize_with_fixed_bounds <- function(x, lower_bound, upper_bound) {
     (x - lower_bound) / (upper_bound - lower_bound)
 }
 
@@ -13,9 +13,9 @@ normalize_info_attributes <- function(info_df) {
         info_df: data frame with information items and attributes
     returns:
         info_df: data frame with normalized attributes"
-    info_df$Attractiveness <- normalize(info_df$Attractiveness)
-    info_df$Popularity <- normalize(info_df$Popularity)
-    info_df$Novelty <- normalize(info_df$Novelty)
+    info_df$Attractiveness <- normalize_with_fixed_bounds(info_df$Attractiveness, lower_bound = 0, upper_bound = 8)
+    info_df$Popularity <- normalize_with_fixed_bounds(info_df$Popularity,   lower_bound = 0, upper_bound = 10)
+    info_df$Novelty <- normalize_with_fixed_bounds(info_df$Novelty, lower_bound = 0, upper_bound = 10)
     return(info_df)
 }
 
@@ -88,7 +88,7 @@ initialize_information <- function(num_info, num_types, mean_attractiveness = 5,
 
 add_new_information <- function(info_df, num_new_info, num_types, mean_attractiveness = 5, sd_attractiveness = 1.5,
                                 lower_bound_attractiveness = 0, upper_bound_attractiveness = 10,
-                                lower_bound_popularity = 1, upper_bound_popularity = 10,
+                                lower_bound_popularity = 0, upper_bound_popularity = 10,
                                 lower_bound_novelty = 0, upper_bound_novelty = 10) {
 
     new_ids <- (max(info_df$ID) + 1):(max(info_df$ID) + num_new_info)
@@ -108,6 +108,6 @@ add_new_information <- function(info_df, num_new_info, num_types, mean_attractiv
     )
 
     # Combine with existing data
-    updated_info_df <- rbind(info_df, new_info_df)
-    return(updated_info_df)
+    # updated_info_df <- rbind(info_df, new_info_df)
+    return(new_info_df)
 }
