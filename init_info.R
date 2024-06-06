@@ -19,7 +19,17 @@ normalize_info_attributes <- function(info_df) {
     return(info_df)
 }
 
-initialize_information <- function(num_info, num_types, mean_attractiveness = 5, sd_attractiveness = 1.5,
+initialize_type_attributes <- function(num_types, lower_bound_engagement = 1, upper_bound_engagement = 5, 
+                                       lower_bound_decay = 0.01, upper_bound_decay = 0.05) {
+    type_attributes <- data.frame(
+        Type = 1:num_types,
+        Engagement = runif(num_types, lower_bound_engagement, upper_bound_engagement),
+        DecayRate = runif(num_types, lower_bound_decay, upper_bound_decay)
+    )
+    return(type_attributes)
+}
+
+initialize_information <- function(num_info, type_attributes, mean_attractiveness = 5, sd_attractiveness = 1.5,
                                    mean_popularity = 5, sd_popularity = 1.5, mean_novelty = 5, sd_novelty = 1.5,
                                    lower_bound_attractiveness = 0, upper_bound_attractiveness = 10,
                                    lower_bound_popularity = 1, upper_bound_popularity = 10,
@@ -33,12 +43,7 @@ initialize_information <- function(num_info, num_types, mean_attractiveness = 5,
     returns:
         info_df: data frame with information items and attributes
     '
-    # init type level attributes
-    type_attributes <- data.frame(
-        Type = 1:num_types,
-        EngagementScore = runif(num_types, 0.5, 1.5),  #random engagement score
-        DecayRate = runif(num_types, 0.01, 0.05)       #random decay rate
-    )
+    num_types <- nrow(type_attributes)
 
     # assign types as numeric values
     types <- sample(1:num_types, num_info, replace = TRUE)
@@ -89,7 +94,7 @@ initialize_information <- function(num_info, num_types, mean_attractiveness = 5,
 
     # normalize item-level attributes
     # info_df <- normalize_info_attributes(info_df)
-    return(list(info_df = info_df, type_attributes = type_attributes))
+    return(info_df)
 }
 
 add_new_information <- function(info_df, num_new_info, type_attributes, mean_attractiveness = 5, sd_attractiveness = 1.5,
