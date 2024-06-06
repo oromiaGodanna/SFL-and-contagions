@@ -19,6 +19,17 @@ normalize_info_attributes <- function(info_df) {
     return(info_df)
 }
 
+calculate_similarity <- function(type1, type2, type_attributes) {
+    if (type1 == type2) {
+        return(1) #types are the same therefore max similarity score
+    } else {
+        engagement_diff <- abs(type_attributes$Engagement[type1] - type_attributes$Engagement[type2])
+        decay_diff <- abs(type_attributes$DecayRate[type1] - type_attributes$DecayRate[type2])
+        similarity_score <- 1 / (1 + engagement_diff + decay_diff) #convert distance to similarity score
+        return(similarity_score)
+    }
+}
+
 initialize_type_attributes <- function(num_types, lower_bound_engagement = 1, upper_bound_engagement = 5, 
                                        lower_bound_decay = 0.01, upper_bound_decay = 0.05) {
     type_attributes <- data.frame(
