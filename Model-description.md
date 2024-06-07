@@ -1,76 +1,86 @@
----
-title: "Experimental Information Diffusion Model"
-output: github_document
----
+Experimental Information Diffusion Model
+================
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(echo = TRUE)
-library(here)
-source(here('diffusion_with_new_innovation.R'))
-source(here("graph_networks.R"))
-source(here("init_info.R"))
-```
 ## Basic Components
+
 ### Information/Trait to Diffuse
+
 #### Type-Level Attributes
 
-  - Engagement Score: Measures how engaging the type of information is.
-  - Decay Rate: Determines how quickly the novelty of items in this type decays over time.
-  
+- Engagement Score: Measures how engaging the type of information is.
+- Decay Rate: Determines how quickly the novelty of items in this type
+  decays over time.
+
 #### Item-Level Attributes
-  - Attractiveness: Represents how appealing the information is (correlated within a type based on a random probability)
-  - Popularity: The current level of engagement (e.g., likes, shares, comments).
-  - Novelty: A dynamic attribute that decreases over time according to the decay rate of the information type.
-Agents
+
+- Attractiveness: Represents how appealing the information is
+  (correlated within a type based on a random probability)
+- Popularity: The current level of engagement (e.g., likes, shares,
+  comments).
+- Novelty: A dynamic attribute that decreases over time according to the
+  decay rate of the information type. Agents
 
 #### Network Structure
 
-   - N number of gents are connected through a small-world network.
+- N number of gents are connected through a small-world network.
 
 #### Initialization
 
-  - Each agent is initialized with a set of repertoires containing random items.
+- Each agent is initialized with a set of repertoires containing random
+  items.
 
 #### Learning Mechanism
 
-  - Agents learn features of information attributes (e.g., attractiveness, popularity, novelty) and social attributes (e.g., social influence).
-  - RL Social Feature Learning Model
-      - choosing information items either from their repertoires or observations from connected neighbours
-      - Q-Values: Agents estimate the value of actions based on learned weights for item attributes and social influence.
-      
-#### Distance based Similarity Calculation
-  - If two items have similar type they are assigned a score of 1
-  - If not a simple distance (d) is calculated between the type level attribures - abs(a1 - b1)
-  - This distance is then convereted to similarity score: 1 / 1 - d 
-  
-  ```{r, eval = FALSE}
-  calculate_similarity <- function(type1, type2, type_attributes) {
-    if (type1 == type2) {
-        return(1) #types are the same therefore max similarity score
-    } else {
-        engagement_diff <- abs(type_attributes$Engagement[type1] - type_attributes$Engagement[type2])
-        decay_diff <- abs(type_attributes$DecayRate[type1] - type_attributes$DecayRate[type2])
-        similarity_score <- 1 / (1 + engagement_diff + decay_diff) #convert distance to similarity score
-        return(similarity_score)
-    }
+- Agents learn features of information attributes (e.g., attractiveness,
+  popularity, novelty) and social attributes (e.g., social influence).
+- RL Social Feature Learning Model
+  - choosing information items either from their repertoires or
+    observations from connected neighbours
+  - Q-Values: Agents estimate the value of actions based on learned
+    weights for item attributes and social influence.
+
+#### Similarity Calculation
+
+- If two items have similar type they are assigned a score of 1
+- If not a simple distance (d) is calculated between the type level
+  attribures - abs(a1 - b1)
+- This distance is then convereted to similarity score: 1 / 1 - d
+
+``` r
+calculate_similarity <- function(type1, type2, type_attributes) {
+  if (type1 == type2) {
+      return(1) #types are the same therefore max similarity score
+  } else {
+      engagement_diff <- abs(type_attributes$Engagement[type1] - type_attributes$Engagement[type2])
+      decay_diff <- abs(type_attributes$DecayRate[type1] - type_attributes$DecayRate[type2])
+      similarity_score <- 1 / (1 + engagement_diff + decay_diff) #convert distance to similarity score
+      return(similarity_score)
+  }
 }
-  ```
+```
 
 #### Perceived Reward Calculation(Experimental)
 
-  - Intrinsic Value: Sum of item-level attributes (attractiveness, popularity, novelty).
-  - Social Influence Value: Influence from observing other agents' choices.
-  - Personal Bias: Based on the similarity of the item's type to the majority type in the agent's repertoire.
-Similarity Calculation
+- Intrinsic Value: Sum of item-level attributes (attractiveness,
+  popularity, novelty).
+- Social Influence Value: Influence from observing other agents’
+  choices.
+- Personal Bias: Based on the similarity of the item’s type to the
+  majority type in the agent’s repertoire. Similarity Calculation
 
-Type Similarity: Calculated using a function that considers engagement score and decay rate differences between types.
+Type Similarity: Calculated using a function that considers engagement
+score and decay rate differences between types.
 
 ## Code Description
-### Diffusion Model
-First Initialize dataframes for attribute weights (for ease of adding new items to the weight matrix, social weight is handeled in a different matrix.) Agents are also initialized with random set of info items in their `repertoires`
 
-```{r, eval = FALSE}
+### Diffusion Model
+
+First Initialize dataframes for attribute weights (for ease of adding
+new items to the weight matrix, social weight is handeled in a different
+matrix.) Agents are also initialized with random set of info items in
+their `repertoires`
+
+``` r
 Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, original_info_df, type_attributes, timesteps = 40, social_influence = TRUE, new_info_prob = 0.01) {
     info_df <- normalize_info_attributes(original_info_df)  # Start with a normalized version of the original info_df
     num_info <- nrow(info_df)
@@ -101,9 +111,14 @@ Info_diffusion_SFL <- function(N, alpha, beta_mu, beta_sd, graph, original_info_
     }
 ```
 
-Then, at each timestep, with some randomly defined probability(new_info_prob), a new information item is added to the simulation. This new item is appended to the original and normalized information data frames. The attributes and weights are updated accordingly to accommodate the new item. A random agent is seeded with this new information item in their repertoire.
+Then, at each timestep, with some randomly defined
+probability(new_info_prob), a new information item is added to the
+simulation. This new item is appended to the original and normalized
+information data frames. The attributes and weights are updated
+accordingly to accommodate the new item. A random agent is seeded with
+this new information item in their repertoire.
 
-```{r, eval = FALSE}
+``` r
 for (t in 1:timesteps) {
         if (runif(1) < new_info_prob && t < 100) {
             # print(t)
@@ -127,11 +142,16 @@ for (t in 1:timesteps) {
         }
 ```
 
-Then, For each agent in each timestep, if social influence is TRUE it identifies the neighbors of the agent in the social network and gathers the unique items observed by these neighbors for choice considerations. 
+Then, For each agent in each timestep, if social influence is TRUE it
+identifies the neighbors of the agent in the social network and gathers
+the unique items observed by these neighbors for choice considerations.
 
-Last choices made by these neighbors from the previous timestep are collected. Then the frequency of these choices is calculated and normalized to derive the social influence values , which are then stored in the social_value matrix.
+Last choices made by these neighbors from the previous timestep are
+collected. Then the frequency of these choices is calculated and
+normalized to derive the social influence values , which are then stored
+in the social_value matrix.
 
-```{r, eval = FALSE}
+``` r
 for (i in 1:N) {
             idx <- (t - 1) * N + i
             if (social_influence) {
@@ -154,20 +174,25 @@ for (i in 1:N) {
 
 #### Q-Value Calculation
 
-- Q_values of zeros is created, with one element for each information item
+- Q_values of zeros is created, with one element for each information
+  item
 
-- combine the items in the agent's repertoire and observed items (from neighbours) into available_items.
+- combine the items in the agent’s repertoire and observed items (from
+  neighbours) into available_items.
 
 - Q_value calculation
+
   - For each available item:
-    - Compute the start and end indices for its attribute weights.
-Check for index out-of-bounds errors.
-    - Calculate type similarity between the item's type and the majority type in the agent's repertoire.
-    - Gather the item's attributes (Attractiveness, Popularity, Novelty) and type similarity into features.
-    - Calculate the Q-value as the weighted sum of features. Include social value if social influence is enabled.
-    
-  
-```{r, eval = FALSE}
+    - Compute the start and end indices for its attribute weights. Check
+      for index out-of-bounds errors.
+    - Calculate type similarity between the item’s type and the majority
+      type in the agent’s repertoire.
+    - Gather the item’s attributes (Attractiveness, Popularity, Novelty)
+      and type similarity into features.
+    - Calculate the Q-value as the weighted sum of features. Include
+      social value if social influence is enabled.
+
+``` r
             Q_values <- numeric(num_info)
             available_items <- unique(c(agent_repertoires[[i]], if (social_influence) observed_items else NULL))
 
@@ -199,18 +224,16 @@ Check for index out-of-bounds errors.
                     Q_values[j] <- sum(attribute_weights[i, start_index:end_index] * features) 
                 }
             }
-
 ```
 
-After the Q-value calculations of the items the agent has access to, in order to make a choice:
-  - set invalid indices (non-available items) to -Inf to effectively zero out their probability
-  - apply softmax function
-  - make a choice
-  - reward fuction not updated in this case
-  - update the attribute weights based on the reward
-  - add the chosen item to the agent's repertoire ensuring uniqueness.
+After the Q-value calculations of the items the agent has access to, in
+order to make a choice: - set invalid indices (non-available items) to
+-Inf to effectively zero out their probability - apply softmax
+function - make a choice - reward fuction not updated in this case -
+update the attribute weights based on the reward - add the chosen item
+to the agent’s repertoire ensuring uniqueness.
 
-```{r, eval = FALSE}
+``` r
             valid_indices <- available_items
             invalid_indices <- setdiff(1:num_info, valid_indices)
             Q_values[invalid_indices] <- -Inf  # Effectively zero out the probability
@@ -252,12 +275,13 @@ After the Q-value calculations of the items the agent has access to, in order to
             }
 
             agent_repertoires[[i]] <- unique(c(agent_repertoires[[i]], choice))
-
 ```
 
-At last, compute frequency of each information item and update the popularity, and adjust the Novelity according to the decay rate of the type as well.
+At last, compute frequency of each information item and update the
+popularity, and adjust the Novelity according to the decay rate of the
+type as well.
 
-```{r, eval = FALSE}
+``` r
         popularity_counts <- rep(0, num_info)
         for (i in 1:N) {
             idx <- (t - 1) * N + i
@@ -271,15 +295,21 @@ At last, compute frequency of each information item and update the popularity, a
             type <- info_df$Type[i]
             decay_rate <- type_attributes$DecayRate[type]
             info_df$Novelty[i] <- pmax(info_df$Novelty[i] - decay_rate, 0)
-
 ```
 
-### Creating Information items 
+### Creating Information items
 
-At the start, to initialize the agents with, a number of information items are created, with a specified number of types. 
-The function assigns random types to each item and initializes their attractiveness, popularity, and novelty attributes randomly drawn from a distribution with lower and upper bounds. The attributes for each item are probabilistically varied based on a base value for their type, ensuring that items of the same type have some level of similarity. The function returns a data frame containing these information items and their attributes
+At the start, to initialize the agents with, a number of information
+items are created, with a specified number of types. The function
+assigns random types to each item and initializes their attractiveness,
+popularity, and novelty attributes randomly drawn from a distribution
+with lower and upper bounds. The attributes for each item are
+probabilistically varied based on a base value for their type, ensuring
+that items of the same type have some level of similarity. The function
+returns a data frame containing these information items and their
+attributes
 
-```{r, eval = FALSE}
+``` r
 initialize_information <- function(num_info, type_attributes, mean_attractiveness = 5, sd_attractiveness = 1.5,
                                    mean_popularity = 5, sd_popularity = 1.5, mean_novelty = 5, sd_novelty = 1.5,
                                    lower_bound_attractiveness = 0, upper_bound_attractiveness = 10,
@@ -347,13 +377,16 @@ initialize_information <- function(num_info, type_attributes, mean_attractivenes
     # info_df <- normalize_info_attributes(info_df)
     return(info_df)
 }
-
-
 ```
 
-The `add_new_information` function adds new information items to an existing data frame. Each new item is assigned a type and given attributes for attractiveness, popularity, and novelty. The attractiveness of new items may be based on existing items of the same type with a some random probability, adding some variation. Returns a data frame containing the new information items.
+The `add_new_information` function adds new information items to an
+existing data frame. Each new item is assigned a type and given
+attributes for attractiveness, popularity, and novelty. The
+attractiveness of new items may be based on existing items of the same
+type with a some random probability, adding some variation. Returns a
+data frame containing the new information items.
 
-```{r, eval = FALSE}
+``` r
 add_new_information <- function(info_df, num_new_info, type_attributes, mean_attractiveness = 5, sd_attractiveness = 1.5,
                                 lower_bound_attractiveness = 0, upper_bound_attractiveness = 10,
                                 lower_bound_popularity = 1, upper_bound_popularity = 10,
@@ -388,113 +421,4 @@ add_new_information <- function(info_df, num_new_info, type_attributes, mean_att
 
     return(new_info_df)
 }
-
-```
-## Some Plots
-
-
-
-```{r pressure, echo=FALSE}
-
-# Parameters
-N <- 50
-alpha <- 0.1
-beta_mu <- 5
-beta_sd <- 0.1
-timesteps <- 300
-
-
-k <- 5
-g <- create_small_world_network(N = N, k, 0.1)
-set.seed(12)
-# info_df <- initialize_information(num_info = 3, num_types = 2)
-type_attrib <- initialize_type_attributes(num_types = 2)
-print(type_attrib)
-info_df <- initialize_information(num_info = 3, type_attributes = type_attrib)
-print(info_df)
-social_influence <- TRUE
-
-result <- Info_diffusion_SFL(N, alpha, beta_mu, beta_sd, g, info_df, type_attrib, timesteps, social_influence, 0.04)
-output <- result$output
-info_df <- result$info_df
-
-```
-
-```{r pressure, echo=FALSE}
-# Extract adoption data
-adoption_matrix <- matrix(0, nrow = timesteps, ncol = nrow(info_df))
-for (t in 1:timesteps) {
-    for (i in 1:N) {
-        idx <- (t - 1) * N + i
-        choice <- output$last_choice[[idx]]
-        adoption_matrix[t, choice] <- adoption_matrix[t, choice] + 1
-    }
-}
-options(repr.plot.width = 18, repr.plot.height = 10)
-
-adoption_df <- as.data.frame(adoption_matrix)
-adoption_df$Timestep <- 1:timesteps
-adoption_melt <- melt(adoption_df, id.vars = "Timestep", variable.name = "Info_ID", value.name = "Adoptions")
-
-ggplot(adoption_melt, aes(x = Timestep, y = Adoptions, color = Info_ID)) +
-    geom_line() +
-    labs(title = "Adoption Rate of Information Items Over Time", x = "Timestep", y = "Number of Adoptions", color = "Info ID") +
-    theme_minimal()
-
-
-# Extract the preferences from finaldf and reshape for plotting
-finaldf <- result$output
-preferences_matrix <- matrix(NA, nrow = timesteps, ncol = N)
-for (t in 1:timesteps) {
-    for (i in 1:N) {
-        idx <- (t - 1) * N + i
-        choice <- unlist(finaldf$last_choice[[idx]])
-        preferences_matrix[t, i] <- ifelse(length(choice) > 0, choice[length(choice)], NA)
-    }
-}
-
-# Convert the preferences matrix to a data frame suitable for ggplot2
-preferences_df <- as.data.frame(preferences_matrix)
-preferences_df$Timestep <- 1:timesteps
-preferences_melt <- reshape2::melt(preferences_df, id.vars = "Timestep", variable.name = "Agent", value.name = "Info_ID")
-
-# Ensure Info_ID is a factor with correct levels
-preferences_melt$Info_ID <- factor(preferences_melt$Info_ID)
-options(repr.plot.width = 16, repr.plot.height = 18)
-
-# Plot the heatmap of preferences over time
-ggplot(preferences_melt, aes(x = Agent, y = Timestep, fill = Info_ID)) +
-    geom_tile() +
-    scale_fill_viridis_d(na.value = "white") +
-    labs(title = "Heatmap of Preferences Over Time", x = "Agent", y = "Timestep", fill = "Info ID") +
-    theme_minimal()
-social_weights <- result$output$social_weights
-
-expected_length <- timesteps * N
-actual_length <- length(social_weights)
-print(paste("Expected length:", expected_length))
-print(paste("Actual length:", actual_length))
-
-if (actual_length == expected_length) {
-    social_weights_df <- data.frame(
-        Timestep = rep(1:timesteps, each = N),
-        Agent = rep(1:N, times = timesteps),
-        Social_Weight = social_weights
-    )
-
-    avg_social_weights_over_time <- aggregate(Social_Weight ~ Timestep, data = social_weights_df, mean)
-
-    plot_data <- data.frame(
-        Timestep = avg_social_weights_over_time$Timestep,
-        Avg_Social_Weight = avg_social_weights_over_time$Social_Weight
-    )
-
-    ggplot(plot_data, aes(x = Timestep, y = Avg_Social_Weight), size = 5) +
-        geom_line(color = "blue") +
-        labs(title = "change in social influence weight", x = "Timestep", y = "average social weight") +
-        theme_minimal()
-} else {
-    print("Error: The length of social_weights does not match the expected length.")
-}
-
 ```
