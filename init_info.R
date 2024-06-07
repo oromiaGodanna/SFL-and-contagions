@@ -19,6 +19,15 @@ normalize_info_attributes <- function(info_df) {
     return(info_df)
 }
 
+majority_type <- function(repertoire, info_df) {
+        if (length(repertoire) == 0) {
+            return(NA)
+        }
+        type_counts <- table(info_df$Type[repertoire])
+        majority_type <- as.numeric(names(which.max(type_counts)))
+        return(majority_type)
+    }
+
 calculate_similarity <- function(type1, type2, type_attributes) {
     if (type1 == type2) {
         return(1) #types are the same therefore max similarity score
