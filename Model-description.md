@@ -443,11 +443,11 @@ add_new_information <- function(info_df, num_new_info, type_attributes, mean_att
     ##   ID Type Attractiveness Popularity Novelty
     ## 1  1    2      0.2687335       0.04       0
     ## 2  2    1      0.6239187       0.04       0
-    ## 3  3    1      0.7271105       0.08       0
-    ## 4  4    1      0.8332351       0.30       0
+    ## 3  3    1      0.7271105       0.06       0
+    ## 4  4    1      0.8332351       0.54       0
     ## 5  5    2      0.3396394       0.02       0
     ## 6  6    2      0.4437475       0.02       0
-    ## 7  7    1      0.8452388       0.50       0
+    ## 7  7    1      0.8452388       0.28       0
     ## 8  8    2      0.3385432       0.00       0
 
 ![](Model-description_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
