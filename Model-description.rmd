@@ -5,22 +5,26 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(echo = TRUE)
 library(here)
+library(ggplot2)
+library(gganimate)
+library(reshape2)
+library(viridis)
 source(here('diffusion_with_new_innovation.R'))
 source(here("graph_networks.R"))
 source(here("init_info.R"))
+
 ```
 ## Basic Components
 ### Information/Trait to Diffuse
 #### Type-Level Attributes
 
-  - Engagement Score: Measures how engaging the type of information is.
+  - Engagement Score: Measures how engaging the type of information is(for example it could be seen as a measure of likes, shares, comments this type of info could get)
   - Decay Rate: Determines how quickly the novelty of items in this type decays over time.
   
 #### Item-Level Attributes
   - Attractiveness: Represents how appealing the information is (correlated within a type based on a random probability)
-  - Popularity: The current level of engagement (e.g., likes, shares, comments).
+  - Popularity: The current level of engagement .
   - Novelty: A dynamic attribute that decreases over time according to the decay rate of the information type.
 Agents
 
@@ -34,7 +38,7 @@ Agents
 
 #### Learning Mechanism
 
-  - Agents learn features of information attributes (e.g., attractiveness, popularity, novelty) and social attributes (e.g., social influence).
+  - Agents learn features of information attributes (attractiveness, popularity, novelty) and social attributes (social influence).
   - RL Social Feature Learning Model
       - choosing information items either from their repertoires or observations from connected neighbours
       - Q-Values: Agents estimate the value of actions based on learned weights for item attributes and social influence.
@@ -57,7 +61,7 @@ Agents
 }
   ```
 
-#### Perceived Reward Calculation(Experimental)
+#### Perceived Reward Calculation(Experimental - commented out included in current implementation)
 
   - Intrinsic Value: Sum of item-level attributes (attractiveness, popularity, novelty).
   - Social Influence Value: Influence from observing other agents' choices.
@@ -394,7 +398,7 @@ add_new_information <- function(info_df, num_new_info, type_attributes, mean_att
 
 
 
-```{r pressure, echo=FALSE}
+```{r, echo=FALSE}
 
 # Parameters
 N <- 50
@@ -406,21 +410,23 @@ timesteps <- 300
 
 k <- 5
 g <- create_small_world_network(N = N, k, 0.1)
-set.seed(12)
+set.seed(1)
 # info_df <- initialize_information(num_info = 3, num_types = 2)
 type_attrib <- initialize_type_attributes(num_types = 2)
+print('Randomly created info types with attributes')
 print(type_attrib)
 info_df <- initialize_information(num_info = 3, type_attributes = type_attrib)
-print(info_df)
 social_influence <- TRUE
 
-result <- Info_diffusion_SFL(N, alpha, beta_mu, beta_sd, g, info_df, type_attrib, timesteps, social_influence, 0.04)
+result <- Info_diffusion_SFL(N, alpha, beta_mu, beta_sd, g, info_df, type_attrib, timesteps, social_influence, 0.05)
 output <- result$output
 info_df <- result$info_df
+print('Final Information items dataframe with attributes')
+print(info_df)
 
 ```
 
-```{r pressure, echo=FALSE}
+```{r, echo=FALSE, fig.width=12, fig.height=6}
 # Extract adoption data
 adoption_matrix <- matrix(0, nrow = timesteps, ncol = nrow(info_df))
 for (t in 1:timesteps) {
@@ -430,7 +436,7 @@ for (t in 1:timesteps) {
         adoption_matrix[t, choice] <- adoption_matrix[t, choice] + 1
     }
 }
-options(repr.plot.width = 18, repr.plot.height = 10)
+options(repr.plot.width = 24, repr.plot.height = 10)
 
 adoption_df <- as.data.frame(adoption_matrix)
 adoption_df$Timestep <- 1:timesteps
@@ -441,7 +447,9 @@ ggplot(adoption_melt, aes(x = Timestep, y = Adoptions, color = Info_ID)) +
     labs(title = "Adoption Rate of Information Items Over Time", x = "Timestep", y = "Number of Adoptions", color = "Info ID") +
     theme_minimal()
 
+```
 
+```{r, echo=FALSE, fig.width=12, fig.height=6}
 # Extract the preferences from finaldf and reshape for plotting
 finaldf <- result$output
 preferences_matrix <- matrix(NA, nrow = timesteps, ncol = N)
@@ -460,7 +468,7 @@ preferences_melt <- reshape2::melt(preferences_df, id.vars = "Timestep", variabl
 
 # Ensure Info_ID is a factor with correct levels
 preferences_melt$Info_ID <- factor(preferences_melt$Info_ID)
-options(repr.plot.width = 16, repr.plot.height = 18)
+options(repr.plot.width = 24, repr.plot.height = 18)
 
 # Plot the heatmap of preferences over time
 ggplot(preferences_melt, aes(x = Agent, y = Timestep, fill = Info_ID)) +
@@ -468,12 +476,14 @@ ggplot(preferences_melt, aes(x = Agent, y = Timestep, fill = Info_ID)) +
     scale_fill_viridis_d(na.value = "white") +
     labs(title = "Heatmap of Preferences Over Time", x = "Agent", y = "Timestep", fill = "Info ID") +
     theme_minimal()
+
+```
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
 social_weights <- result$output$social_weights
 
 expected_length <- timesteps * N
 actual_length <- length(social_weights)
-print(paste("Expected length:", expected_length))
-print(paste("Actual length:", actual_length))
 
 if (actual_length == expected_length) {
     social_weights_df <- data.frame(

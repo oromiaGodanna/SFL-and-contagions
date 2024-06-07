@@ -7,7 +7,9 @@ Experimental Information Diffusion Model
 
 #### Type-Level Attributes
 
-- Engagement Score: Measures how engaging the type of information is.
+- Engagement Score: Measures how engaging the type of information is(for
+  example it could be seen as a measure of likes, shares, comments this
+  type of info could get)
 - Decay Rate: Determines how quickly the novelty of items in this type
   decays over time.
 
@@ -15,8 +17,7 @@ Experimental Information Diffusion Model
 
 - Attractiveness: Represents how appealing the information is
   (correlated within a type based on a random probability)
-- Popularity: The current level of engagement (e.g., likes, shares,
-  comments).
+- Popularity: The current level of engagement .
 - Novelty: A dynamic attribute that decreases over time according to the
   decay rate of the information type. Agents
 
@@ -31,15 +32,15 @@ Experimental Information Diffusion Model
 
 #### Learning Mechanism
 
-- Agents learn features of information attributes (e.g., attractiveness,
-  popularity, novelty) and social attributes (e.g., social influence).
+- Agents learn features of information attributes (attractiveness,
+  popularity, novelty) and social attributes (social influence).
 - RL Social Feature Learning Model
   - choosing information items either from their repertoires or
     observations from connected neighbours
   - Q-Values: Agents estimate the value of actions based on learned
     weights for item attributes and social influence.
 
-#### Similarity Calculation
+#### Distance based Similarity Calculation
 
 - If two items have similar type they are assigned a score of 1
 - If not a simple distance (d) is calculated between the type level
@@ -59,7 +60,7 @@ calculate_similarity <- function(type1, type2, type_attributes) {
 }
 ```
 
-#### Perceived Reward Calculation(Experimental)
+#### Perceived Reward Calculation(Experimental - commented out included in current implementation)
 
 - Intrinsic Value: Sum of item-level attributes (attractiveness,
   popularity, novelty).
@@ -422,3 +423,35 @@ add_new_information <- function(info_df, num_new_info, type_attributes, mean_att
     return(new_info_df)
 }
 ```
+
+## Some Plots
+
+    ## Warning: `watts.strogatz.game()` was deprecated in igraph 2.0.0.
+    ## ℹ Please use `sample_smallworld()` instead.
+    ## This warning is displayed once every 8 hours.
+    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+    ## generated.
+
+    ## [1] "Randomly created info types with attributes"
+
+    ##   Type Engagement  DecayRate
+    ## 1    1   2.062035 0.03291413
+    ## 2    2   2.488496 0.04632831
+
+    ## [1] "Final Information items dataframe with attributes"
+
+    ##   ID Type Attractiveness Popularity Novelty
+    ## 1  1    2      0.2687335       0.04       0
+    ## 2  2    1      0.6239187       0.04       0
+    ## 3  3    1      0.7271105       0.08       0
+    ## 4  4    1      0.8332351       0.30       0
+    ## 5  5    2      0.3396394       0.02       0
+    ## 6  6    2      0.4437475       0.02       0
+    ## 7  7    1      0.8452388       0.50       0
+    ## 8  8    2      0.3385432       0.00       0
+
+![](Model-description_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+![](Model-description_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+![](Model-description_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
