@@ -40,7 +40,23 @@ generate_multiple_items <- function(n) {
     return(items_df)
 }   
 
+generate_item_from_learned_weights <- function(weights){
 
+  # translating learned weights to new item attributes
+  # any other plausable way to do this?
+  weights <- min_max_normalization(weights)
+
+  item <- data.frame(
+    attractiveness = generate_attribute(mean = weights[1], sd = 0.01),
+    popularity = generate_attribute(mean = weights[2], sd = 0.01),
+    novelty = generate_attribute(mean = weights[3], sd = 0.01),
+    sentiment = generate_attribute(mean = weights[4], sd = 0.01),
+    credibility = generate_attribute(mean = weights[5], sd = 0.01),
+    emotional_trigger = generate_attribute(mean = weights[6], sd = 0.01)
+  )
+  return (item)
+
+}
 
 normalize_weights <- function(weight_matrix) {
   
