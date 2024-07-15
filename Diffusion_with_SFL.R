@@ -10,7 +10,7 @@ Diffusion_with_SFL <- function(N, alpha,
                                items_df = NULL,
                                social_influence = TRUE,
                                new_item_prob = 0.1,
-                               num_attrib = 6) {
+                               num_attrib = 4) {
     "
     Simulate the diffusion of information with social learning
     args:
@@ -121,11 +121,14 @@ Diffusion_with_SFL <- function(N, alpha,
                     })))
 
                     if (length(neighs_ids) > 0) {
-                        # Retrieve last choices from the previous timestep from neighbors
+                        # Retrieve last choices from the previous timestep from neighbors and handel zeros
                         neigh_last_choices <- unlist(lapply(neighs_ids, function(nid) {
-                            output$last_choice[(t - 1) * N + nid][[1]]
+                            last_choice <- output$last_choice[(t - 1) * N + nid][[1]]
+                            if (last_choice != 0) {
+                                last_choice
+                            }
                         }))
-                        # handeling potential zeros
+                        
                         if (length(neigh_last_choices) > 0 ) {
                             choice_counts <- table(factor(neigh_last_choices, levels = 1:num_items))
                             full_choice_counts <- as.numeric(choice_counts)
@@ -140,7 +143,7 @@ Diffusion_with_SFL <- function(N, alpha,
 
 
                 for (j in available_items) {
-                    features <- c(items_df$attractiveness[j], items_df$popularity[j], items_df$novelty[j], items_df$sentiment[j], items_df$credibility[j], items_df$emotional_trigger[j])
+                    features <- c(items_df$attractiveness[j], items_df$popularity[j], items_df$novelty[j], items_df$emotional_trigger[j])  #items_df$credibility[j], items_df$sentiment[j], 
 
                     if (social_influence) {
                         Q_values[j] <- sum(attribute_weights[i, ] * features) + social_weights[i] * social_value[i, j]
@@ -178,7 +181,7 @@ Diffusion_with_SFL <- function(N, alpha,
             output$reward[idx] <- reward
             delta <- reward - Q_adopt
 
-            feature_values_of_choice <- c(items_df$attractiveness[choice], items_df$popularity[choice], items_df$novelty[choice], items_df$sentiment[choice], items_df$credibility[choice], items_df$emotional_trigger[choice])
+            feature_values_of_choice <- c(items_df$attractiveness[choice], items_df$popularity[choice], items_df$novelty[choice], items_df$emotional_trigger[choice]) #items_df$credibility[choice], items_df$sentiment[choice], 
             attribute_weights[i, ] <- attribute_weights[i, ] + alpha * delta * feature_values_of_choice
             output$attribute_weights[idx] <- list(attribute_weights[i, ])
             
