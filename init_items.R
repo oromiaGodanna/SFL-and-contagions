@@ -18,6 +18,15 @@ clip_item_values <- function(item) {
 quadratic_transform <- function (x){
   return (x^2)
 }
+ 
+
+standard_sigmoid_transform <- function(x) {
+  return (1 / (1 + exp(-x)))
+}
+
+center_shifted_sigmoid_transformation <- function(x, c=0) {
+  return (1 / (1 + exp(-1*(x - c))))
+}
 
 generate_item <- function() {
     # generate a random sentiment value between -1 and 1
@@ -50,15 +59,12 @@ generate_multiple_items <- function(n) {
 
 generate_item_from_learned_weights <- function(weights){
 
-  # translating learned weights to new item attributes
-  # any other plausable way to do this?
-  weights <- min_max_normalization(weights)
 
   item <- data.frame(
-    attractiveness = generate_attribute(mean = weights[1], sd = 0.01),
-    popularity = generate_attribute(mean = weights[2], sd = 0.01),
-    novelty = generate_attribute(mean = weights[3], sd = 0.01),
-    emotional_trigger = generate_attribute(mean = weights[6], sd = 0.01)
+    attractiveness = standard_sigmoid_transform(weights[1]),
+    popularity = standard_sigmoid_transform(weights[2]),
+    novelty = standard_sigmoid_transform(weights[3]),
+    emotional_trigger = standard_sigmoid_transform(weights[4])
   )
   return (item)
 
