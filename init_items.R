@@ -1,4 +1,5 @@
 library(truncnorm)
+source('./utils.R')
 
 generate_attribute <- function(mean = 0.5, sd = 0.15, lower = 0, upper = 1) {
   rtruncnorm(1, a = lower, b = upper, mean = mean, sd = sd)
@@ -9,24 +10,11 @@ generate_attribute_random <- function() {
   return (rand)
 }
 
-min_max_normalization <-  function(x) (x - min(x)) / (max(x) - min(x))
 
 clip_item_values <- function(item) {
     lapply(item, function(x) pmax(pmin(x, 1), 0))
 }
 
-quadratic_transform <- function (x){
-  return (x^2)
-}
- 
-
-standard_sigmoid_transform <- function(x) {
-  return (1 / (1 + exp(-x)))
-}
-
-center_shifted_sigmoid_transformation <- function(x, c=0) {
-  return (1 / (1 + exp(-1*(x - c))))
-}
 
 generate_item <- function() {
     # generate a random sentiment value between -1 and 1
@@ -57,24 +45,24 @@ generate_multiple_items <- function(n) {
     return(items_df)
 }   
 
-generate_item_from_learned_weights <- function(weights){
+generate_item_from_learned_weights <- function(weights, attribute_weights_list){
 
+  # convert to numeric to avoid empty list
+  attribute_weights_list <- lapply(attribute_weights_list, function(x) as.numeric(x))
+  all_weights_matrix <- do.call(rbind, attribute_weights_list) # convert to matrix
 
+  # calculate the mean for each feature across all time steps and agents
+  feature_means <- colMeans(all_weights_matrix)
+
+  # center the weights by all time mean of feature values
+  weights <- weights - feature_means
   item <- data.frame(
     attractiveness = standard_sigmoid_transform(weights[1]),
     popularity = standard_sigmoid_transform(weights[2]),
     novelty = standard_sigmoid_transform(weights[3]),
     emotional_trigger = standard_sigmoid_transform(weights[4])
   )
-  return (item)
+  # print(item)
+  return(item)
 
-}
-
-normalize_weights <- function(weight_matrix) {
-  
-  for (i in 1:ncol(weight_matrix)) {
-    weight_matrix[, i] <- min_max_normalization(weight_matrix[i, ], min = 0, max = 1)
-  }
-  return(weight_matrix)
- 
 }
