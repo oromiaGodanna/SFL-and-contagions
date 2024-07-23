@@ -1,10 +1,13 @@
+source ('./utils.R')
+
 calculate_feedback <- function(agent_id,
                                chosen_item,
                                graph,
                                attribute_weights,
                                items,
-                               num_attrib = 6,
-                               timestep) {
+                               timestep,
+                               average_estimate,
+                               num_attrib = 6) {
     "
     Calculate the feedback score for a chosen item based on the agent\'s neighbors learned weights
     args:
@@ -19,33 +22,32 @@ calculate_feedback <- function(agent_id,
         total_feedback_score: the total feedback score from the agent\'s neighbors
     "
 
-
+    # print(average_estimate)
     neighbors_ids <- neighbors(graph, agent_id)
     feedback_scores <- numeric(length(neighbors_ids))
 
     item_features <- items[chosen_item, ] # feature values of the chosen item
 
+    value_estimates <- numeric(length(neighbors_ids))
     for (j in 1:length(neighbors_ids)) {
         neighbor_id <- neighbors_ids[j]
         neighbor_weights <- attribute_weights[neighbor_id, ]
+        value_estimates[j] <- sum(neighbor_weights * item_features)
+    }
 
-        Q_value <- sum(neighbor_weights * item_features)
-        probability <- sigmoid(Q_value)
+    # center the value estimates using the average estimate from the previous timestep
+    centered_estimate_values <- value_estimates - average_estimate
 
+    for (j in 1:length(neighbors_ids)) {
+        probability <- standard_sigmoid_transform(centered_estimate_values[j])
         if (timestep == 1) {
             feedback_scores[j] <- ifelse(probability < 0.5, 0, 1)
+            # feedback_scores[j] <- ifelse(runif(1, 0, 1) > 0.5, 1, 0)
+
         } else {
             feedback_scores[j] <- ifelse(probability > 0.5, 1, 0)
         }
     }
-
     total_feedback_score <- sum(feedback_scores)
-    return(total_feedback_score)
-}
-
-sigmoid <- function(x, c = 10) {
-    "
-        Sigmoid function with simple scaling by a constant c
-    "
-    return(1 / (1 + exp(-x / c)))
+    return(list(total_feedback_score = total_feedback_score, value_estimates = value_estimates))
 }
