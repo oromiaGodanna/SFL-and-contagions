@@ -51,6 +51,7 @@ Diffusion_with_SFL <- function(N, alpha,
     social_weights <- if (social_influence) rep(0, N)
     social_value <- matrix(0, nrow = N, ncol = num_items)
 
+    avg_feedback_value_estimates <- numeric(timesteps)
     # Prepare the output data frame
     output <- data.frame(
         trial = rep(1:timesteps, each = N),
@@ -74,17 +75,28 @@ Diffusion_with_SFL <- function(N, alpha,
     }
 
     for (t in 1:timesteps) {
+
+        feedback_value_estimates <- numeric()
+
         for (i in 1:N) {
 
             idx <- (t - 1) * N + i
             prob <- runif(1)
 
+            neighs_ids <- neighbors(graph, i)
+            observed_items <- unique(unlist(lapply(neighs_ids, function(nid) {
+                # filter items with Count > 0 just in case
+                rep_items <- agent_repertoires[[nid]]
+                rep_items$Item[rep_items$Count > 0]
+            })))
+            available_items <- unique(c(agent_repertoires[[i]]$Item, if (social_influence) observed_items else NULL))
+
             if (prob < new_item_prob) {
+
                 new_item <- generate_one_item() #
-                # if(t > 2){ # Generate a new item possibly based on the agent's learned preferences or weights
-                #     new_item <- generate_item_from_learned_weights(attribute_weights[i, ])
-                #     ##print(new_item)
-                # }
+                if(t > 2){ # Generate a new item based on the agent's learned preferences or weights
+                    new_item <- generate_item_from_learned_weights(attribute_weights[i, ], attribute_weights_list = output$attribute_weights)
+                }
 
                 items_df <- rbind(items_df, new_item)
                 num_items <- nrow(items_df)
@@ -108,17 +120,16 @@ Diffusion_with_SFL <- function(N, alpha,
                 output$last_choice[idx] <- list(choice)
 
                 # Calculate reward based on feedback from the network; could be refined to include novelty bonuses
-                reward <- calculate_feedback(agent_id = i, chosen_item = choice, graph = g, attribute_weights = attribute_weights, items = items_df, timestep = t)
+                average_estimate <- ifelse(t != 1, avg_feedback_value_estimates[t - 1], 0)
+                feedback <- calculate_feedback(agent_id = i, chosen_item = choice, graph = g, attribute_weights = attribute_weights, items = items_df, timestep = t, average_estimate = average_estimate)
+                reward <- feedback$total_feedback_score
+                feedback_value_estimates <- c(feedback_value_estimates, feedback$value_estimates)
+
                 Q_adopt <- Q_values
 
-            } else if (prob > new_item_prob && num_items > 0) {
+            } else if (length(available_items) > 0) {
+
                 if (social_influence) {
-                    neighs_ids <- neighbors(graph, i)
-                    observed_items <- unique(unlist(lapply(neighs_ids, function(nid) {
-                        # filter items with Count > 0 just in case
-                        rep_items <- agent_repertoires[[nid]]
-                        rep_items$Item[rep_items$Count > 0]
-                    })))
 
                     if (length(neighs_ids) > 0) {
                         # Retrieve last choices from the previous timestep from neighbors and handel zeros
@@ -139,7 +150,6 @@ Diffusion_with_SFL <- function(N, alpha,
                 }
 
                 Q_values <- numeric(num_items)
-                available_items <- unique(c(agent_repertoires[[i]]$Item, if (social_influence) observed_items else NULL))
 
 
                 for (j in available_items) {
@@ -172,10 +182,13 @@ Diffusion_with_SFL <- function(N, alpha,
                 output$last_choice[idx] <- list(choice)
 
                 # all the neighbors of the agent give feedback(reward) for the given choice
-                reward <- calculate_feedback(agent_id = i, chosen_item = choice, graph = g, attribute_weights = attribute_weights, items = items_df, timestep = t)
+                average_estimate <- ifelse(t != 1, avg_feedback_value_estimates[t - 1], 0)
+                feedback <- calculate_feedback(agent_id = i, chosen_item = choice, graph = g, attribute_weights = attribute_weights, items = items_df, timestep = t, average_estimate = average_estimate)
+                reward <- feedback$total_feedback_score
+                feedback_value_estimates <- c(feedback_value_estimates, feedback$value_estimates)
                 Q_adopt <- Q_values[choice]
             }
-            if (num_items == 0) {
+            if (length(available_items) == 0) {
                 next
             }
             output$reward[idx] <- reward
@@ -202,6 +215,8 @@ Diffusion_with_SFL <- function(N, alpha,
             agent_repertoires[[i]] <- current_repertoire
         }
 
+        avg_feedback_value_estimates[t] <- mean(feedback_value_estimates)
+
         if (num_items > 0) {
             
             popularity_counts <- rep(0, num_items)
@@ -220,6 +235,7 @@ Diffusion_with_SFL <- function(N, alpha,
                 items_df$novelty[i] <- pmax(items_df$novelty[i] - decay_rate, 0)
             }
         }
+
     }
     return(list(output = output, items_df = items_df))
 }
