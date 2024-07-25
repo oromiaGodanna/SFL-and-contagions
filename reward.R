@@ -21,7 +21,6 @@ calculate_feedback <- function(agent_id,
         total_feedback_score: the total feedback score from the agent\'s neighbors
     "
 
-    # print(average_estimate)
     neighbors_ids <- neighbors(graph, agent_id)
     feedback_scores <- numeric(length(neighbors_ids))
 

@@ -261,3 +261,36 @@ normalize_neighbour_count <- function(graph, N){
     
 }
 
+sample_items <- function(available_items, output, timestep, N, random_sample = FALSE){
+    "
+        Sample items from the agent\'s repertoire to estimate values
+        This serve as a removal of old items and replacement with new items based on 
+        the frequency of the item/trait
+
+        Calculated as the average popularity of an item for the past t timesteps
+    "
+
+    # get last items for all time stpes before t from the output
+    adoption_matrix <- matrix(0, nrow = N, ncol = length(available_items))
+    for (t in i:timestep){
+        for (i in 1:N){
+            idx <- (t - 1) * N + i
+            last_choice <- output$last_choice[idx][[1]]
+            if (last_choice == 0) next
+            adoption_matrix[i, last_choice] <- adoption_matrix[i, last_choice] + 1
+        }
+    }
+
+    # take items with adoption rate greater than 0.5 and mask avialable items with it
+    adoption_matrix <- adoption_matrix / N
+    adoption_matrix[adoption_matrix < 0.5] <- 0
+    available_items <- available_items * adoption_matrix
+    # remove the items with zero proprtions
+    available_items <- available_items[available_items > 0]
+
+    if (random_sample) {
+        available_items <- sample(available_items, runif(1, 1, length(available_items)))
+    }   
+    return(available_items)
+
+}

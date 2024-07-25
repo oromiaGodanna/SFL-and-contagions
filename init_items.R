@@ -64,7 +64,6 @@ generate_item_from_learned_weights <- function(agent_id, weights, attribute_weig
     agent_id = agent_id
     # emotional_trigger = standard_sigmoid_transform(weights[4])
   )
-  # print(item)
   return(item)
 
 }
