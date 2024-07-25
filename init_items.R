@@ -29,7 +29,8 @@ generate_item <- function() {
         attractiveness = generate_attribute_random(),
         popularity = generate_attribute_random(),
         novelty = generate_attribute_random(),
-        emotional_trigger = generate_attribute_random()
+        agent_id = runif(1, 1, 5)
+        # emotional_trigger = generate_attribute_random()
     )
 }
 
@@ -45,13 +46,13 @@ generate_multiple_items <- function(n) {
     return(items_df)
 }   
 
-generate_item_from_learned_weights <- function(weights, attribute_weights_list){
+generate_item_from_learned_weights <- function(agent_id, weights, attribute_weights_list){
 
   # convert to numeric to avoid empty list
   attribute_weights_list <- lapply(attribute_weights_list, function(x) as.numeric(x))
   all_weights_matrix <- do.call(rbind, attribute_weights_list) # convert to matrix
 
-  # calculate the mean for each feature across all time steps and agents
+  # calculate the mean for each feature's weight across all time steps and agents
   feature_means <- colMeans(all_weights_matrix)
 
   # center the weights by all time mean of feature values
@@ -60,7 +61,8 @@ generate_item_from_learned_weights <- function(weights, attribute_weights_list){
     attractiveness = standard_sigmoid_transform(weights[1]),
     popularity = standard_sigmoid_transform(weights[2]),
     novelty = standard_sigmoid_transform(weights[3]),
-    emotional_trigger = standard_sigmoid_transform(weights[4])
+    agent_id = agent_id
+    # emotional_trigger = standard_sigmoid_transform(weights[4])
   )
   # print(item)
   return(item)

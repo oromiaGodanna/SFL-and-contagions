@@ -7,7 +7,7 @@ calculate_feedback <- function(agent_id,
                                items,
                                timestep,
                                average_estimate,
-                               num_attrib = 6) {
+                               connection_count) {
     "
     Calculate the feedback score for a chosen item based on the agent\'s neighbors learned weights
     args:
@@ -16,7 +16,6 @@ calculate_feedback <- function(agent_id,
         graph: igraph object representing the social network
         attribute_weights: matrix of learned weights for each agent
         items: data frame with information items and attributes
-        num_attrib: number of attributes for each item
         timestep: the current timestep
     returns:
         total_feedback_score: the total feedback score from the agent\'s neighbors
@@ -26,12 +25,11 @@ calculate_feedback <- function(agent_id,
     neighbors_ids <- neighbors(graph, agent_id)
     feedback_scores <- numeric(length(neighbors_ids))
 
-    item_features <- items[chosen_item, ] # feature values of the chosen item
-
+    item_features <- c(items$attractiveness[chosen_item], items$popularity[chosen_item], items$novelty[chosen_item]) # feature values of the chosen item
     value_estimates <- numeric(length(neighbors_ids))
     for (j in 1:length(neighbors_ids)) {
         neighbor_id <- neighbors_ids[j]
-        neighbor_weights <- attribute_weights[neighbor_id, ]
+        neighbor_weights <- attribute_weights[neighbor_id, 1:3]
         value_estimates[j] <- sum(neighbor_weights * item_features)
     }
 
