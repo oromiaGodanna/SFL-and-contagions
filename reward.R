@@ -6,7 +6,7 @@ calculate_feedback <- function(agent_id,
                                attribute_weights,
                                items,
                                timestep,
-                               average_estimate,
+                               average_estimate = 0,
                                connection_count) {
     "
     Calculate the feedback score for a chosen item based on the agent\'s neighbors learned weights

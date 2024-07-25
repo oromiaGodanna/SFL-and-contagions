@@ -115,6 +115,7 @@ Diffusion_with_SFL <- function(N, alpha,
                 new_repertoire_entry <- data.frame(Item = new_item_index, Count = 0)
                 agent_repertoires[[i]] <- rbind(current_repertoire, new_repertoire_entry)
 
+                available_items <- c(available_items, new_item_index)
                 # Agent immediately chooses the new item, introducing it to the network
                 features <- c(items_df$attractiveness[new_item_index], items_df$novelty[new_item_index], items_df$popularity[new_item_index], normalized_neighbour_counts[items_df$agent_id[new_item_index]])
 
@@ -124,10 +125,9 @@ Diffusion_with_SFL <- function(N, alpha,
 
                 # Calculate reward based on feedback from the network; could be refined to include novelty bonuses
                 average_estimate <- ifelse(t != 1, avg_feedback_value_estimates[t - 1], 0)
-                feedback <- calculate_feedback(agent_id = i, chosen_item = choice, graph = g, attribute_weights = attribute_weights, items = items_df, timestep = t, average_estimate = average_estimate, connection_count = normalized_neighbour_counts)
+                feedback <- calculate_feedback(agent_id = i, chosen_item = choice, graph = graph, attribute_weights = attribute_weights, items = items_df, timestep = t, average_estimate = average_estimate, connection_count = normalized_neighbour_counts)
                 reward <- feedback$total_feedback_score
                 feedback_value_estimates <- c(feedback_value_estimates, feedback$value_estimates)
-
                 Q_adopt <- Q_values
 
             } else if (length(available_items) > 0) {
@@ -188,7 +188,7 @@ Diffusion_with_SFL <- function(N, alpha,
 
                 # all the neighbors of the agent give feedback(reward) for the given choice
                 average_estimate <- ifelse(t != 1, avg_feedback_value_estimates[t - 1], 0)
-                feedback <- calculate_feedback(agent_id = i, chosen_item = choice, graph = g, attribute_weights = attribute_weights, items = items_df, timestep = t, average_estimate = average_estimate, connection_count = normalized_neighbour_counts)
+                feedback <- calculate_feedback(agent_id = i, chosen_item = choice, graph, attribute_weights = attribute_weights, items = items_df, timestep = t, average_estimate = average_estimate, connection_count = normalized_neighbour_counts)
                 reward <- feedback$total_feedback_score
                 feedback_value_estimates <- c(feedback_value_estimates, feedback$value_estimates)
                 Q_adopt <- Q_values[choice]
@@ -198,6 +198,7 @@ Diffusion_with_SFL <- function(N, alpha,
             }
             output$reward[idx] <- reward
             delta <- reward - Q_adopt
+            
 
             feature_values_of_choice <- c(items_df$attractiveness[choice], items_df$popularity[choice], items_df$novelty[choice], normalized_neighbour_counts[items_df$agent_id[choice]]) #, items_df$emotional_trigger[choice], items_df$credibility[choice], items_df$sentiment[choice], 
             attribute_weights[i, ] <- attribute_weights[i, ] + alpha * delta * feature_values_of_choice
