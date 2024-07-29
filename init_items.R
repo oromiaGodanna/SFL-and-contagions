@@ -60,7 +60,7 @@ generate_item_from_learned_weights <- function(agent_id, weights, attribute_weig
   item <- data.frame(
     attractiveness = standard_sigmoid_transform(weights[1]),
     popularity = standard_sigmoid_transform(weights[2]),
-    novelty = standard_sigmoid_transform(weights[3]),
+    novelty = 1.0,
     agent_id = agent_id
     # emotional_trigger = standard_sigmoid_transform(weights[4])
   )

@@ -23,7 +23,6 @@ calculate_feedback <- function(agent_id,
 
     neighbors_ids <- neighbors(graph, agent_id)
     feedback_scores <- numeric(length(neighbors_ids))
-
     item_features <- c(items$attractiveness[chosen_item], items$popularity[chosen_item], items$novelty[chosen_item]) # feature values of the chosen item
     value_estimates <- numeric(length(neighbors_ids))
     for (j in 1:length(neighbors_ids)) {
@@ -31,13 +30,11 @@ calculate_feedback <- function(agent_id,
         neighbor_weights <- attribute_weights[neighbor_id, 1:3]
         value_estimates[j] <- sum(neighbor_weights * item_features)
     }
-
     # center the value estimates using the average estimate from the previous timestep
     centered_estimate_values <- value_estimates - average_estimate
-
     for (j in 1:length(neighbors_ids)) {
         probability <- standard_sigmoid_transform(centered_estimate_values[j])
-        if (timestep == 1) {
+        if (timestep == 1 || all(centered_estimate_values == 0)) {
             feedback_scores[j] <- ifelse(probability < 0.5, 0, 1)
             # feedback_scores[j] <- ifelse(runif(1, 0, 1) > 0.5, 1, 0)
 
