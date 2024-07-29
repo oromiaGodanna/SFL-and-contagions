@@ -9,7 +9,7 @@ Diffusion_with_SFL <- function(N, alpha,
                                timesteps = 40,
                                items_df = NULL,
                                social_influence = TRUE,
-                               new_item_prob = 0.12,
+                               new_item_prob = 0.02,
                                num_attrib = 4) {
     "
     Simulate the diffusion of information with social learning
@@ -74,6 +74,7 @@ Diffusion_with_SFL <- function(N, alpha,
         })
     }
 
+    # count the number of neighbors for each agent and min-max normalize it
     normalized_neighbour_counts <- normalize_neighbour_count(graph, N)
 
     for (t in 1:timesteps) {
@@ -85,9 +86,10 @@ Diffusion_with_SFL <- function(N, alpha,
             idx <- (t - 1) * N + i
             prob <- runif(1)
 
+            # get the neighbors of the agent and observe items in their repertoires
             neighs_ids <- neighbors(graph, i)
             observed_items <- unique(unlist(lapply(neighs_ids, function(nid) {
-                # filter items with Count > 0 just in case
+                # filter items with Count > 0 (just in case)
                 rep_items <- agent_repertoires[[nid]]
                 rep_items$Item[rep_items$Count > 0]
             })))
@@ -95,9 +97,11 @@ Diffusion_with_SFL <- function(N, alpha,
 
             if (prob < new_item_prob) {
 
-                new_item <- generate_one_item() #
-                if(t > 2){ # Generate a new item based on the agent's learned preferences or weights
+                 #
+                if(any(attribute_weights[i, ] != 0)){ # Generate a new item based on the agent's learned preferences or weights
                     new_item <- generate_item_from_learned_weights(i, attribute_weights[i, ], attribute_weights_list = output$attribute_weights)
+                }else{
+                    new_item <- generate_one_item()
                 }
 
                 items_df <- rbind(items_df, new_item)
@@ -222,6 +226,9 @@ Diffusion_with_SFL <- function(N, alpha,
         }
 
         avg_feedback_value_estimates[t] <- mean(feedback_value_estimates)
+        if(is.nan(avg_feedback_value_estimates[t])) {  
+            avg_feedback_value_estimates[t] <- 0
+        }
 
         if (num_items > 0) {
             
