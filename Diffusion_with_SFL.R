@@ -10,6 +10,7 @@ Diffusion_with_SFL <- function(N, alpha,
                                items_df = NULL,
                                social_influence = TRUE,
                                new_item_prob = 0.02,
+                               decay_rate = 0.005,
                                num_attrib = 4) {
     "
     Simulate the diffusion of information with social learning
@@ -76,7 +77,7 @@ Diffusion_with_SFL <- function(N, alpha,
 
     # count the number of neighbors for each agent and min-max normalize it
     normalized_neighbour_counts <- normalize_neighbour_count(graph, N)
-
+    current_repertoires <- agent_repertoires
     for (t in 1:timesteps) {
 
         feedback_value_estimates <- numeric()
@@ -99,9 +100,9 @@ Diffusion_with_SFL <- function(N, alpha,
 
                  #
                 if(any(attribute_weights[i, ] != 0)){ # Generate a new item based on the agent's learned preferences or weights
-                    new_item <- generate_item_from_learned_weights(i, attribute_weights[i, ], attribute_weights_list = output$attribute_weights)
+                    new_item <- generate_items_from_learned_weights_individual_average(i, attribute_weights[i, ], attribute_weights_list = output$attribute_weights, timestep = t, N = N)   
                 }else{
-                    new_item <- generate_one_item()
+                    new_item <- generate_one_item(i)
                 }
 
                 items_df <- rbind(items_df, new_item)
@@ -115,9 +116,9 @@ Diffusion_with_SFL <- function(N, alpha,
                 new_item_index <- num_items
 
                 # Update the current agent's repertoire to include the new item with an initial count of 0, count will be updated later
-                current_repertoire <- agent_repertoires[[i]]
-                new_repertoire_entry <- data.frame(Item = new_item_index, Count = 0)
-                agent_repertoires[[i]] <- rbind(current_repertoire, new_repertoire_entry)
+                # current_repertoire <- agent_repertoires[[i]]
+                # new_repertoire_entry <- data.frame(Item = new_item_index, Count = 0)
+                # agent_repertoires[[i]] <- rbind(current_repertoire, new_repertoire_entry)
 
                 available_items <- c(available_items, new_item_index)
                 # Agent immediately chooses the new item, introducing it to the network
@@ -175,7 +176,8 @@ Diffusion_with_SFL <- function(N, alpha,
                 invalid_indices <- setdiff(1:num_items, valid_indices)
                 Q_values[invalid_indices] <- -Inf # zero out the probability of unobserved items
 
-                exp_values <- exp(agent_betas[i] * Q_values)
+                max_q_value <- max(agent_betas[i] * Q_values)
+                exp_values <- exp((agent_betas[i] * Q_values) - max_q_value)
                 probabilities <- exp_values / sum(exp_values)
 
                 probabilities[probabilities < 0] <- 0
@@ -186,7 +188,6 @@ Diffusion_with_SFL <- function(N, alpha,
                     probabilities <- rep(1, length(probabilities))
                 }
                 probabilities <- probabilities / sum(probabilities)
-
                 choice <- sample(1:num_items, 1, prob = probabilities)
                 output$last_choice[idx] <- list(choice)
 
@@ -202,7 +203,7 @@ Diffusion_with_SFL <- function(N, alpha,
             }
             output$reward[idx] <- reward
             delta <- reward - Q_adopt
-            
+
 
             feature_values_of_choice <- c(items_df$attractiveness[choice], items_df$popularity[choice], items_df$novelty[choice], normalized_neighbour_counts[items_df$agent_id[choice]]) #, items_df$emotional_trigger[choice], items_df$credibility[choice], items_df$sentiment[choice], 
             attribute_weights[i, ] <- attribute_weights[i, ] + alpha * delta * feature_values_of_choice
@@ -213,7 +214,7 @@ Diffusion_with_SFL <- function(N, alpha,
                 output$social_weights[idx] <- social_weights[i]
             }
 
-            current_repertoire <- agent_repertoires[[i]]
+            current_repertoire <- current_repertoires[[i]]
             if (choice %in% current_repertoire$Item) {
                 # increase the count for the chosen item
                 current_repertoire$Count[current_repertoire$Item == choice] <- current_repertoire$Count[current_repertoire$Item == choice] + 1
@@ -222,7 +223,7 @@ Diffusion_with_SFL <- function(N, alpha,
                 new_entry <- data.frame(Item = choice, Count = 1)
                 current_repertoire <- rbind(current_repertoire, new_entry)
             }
-            agent_repertoires[[i]] <- current_repertoire
+            current_repertoires[[i]] <- current_repertoire
         }
 
         avg_feedback_value_estimates[t] <- mean(feedback_value_estimates)
@@ -231,10 +232,11 @@ Diffusion_with_SFL <- function(N, alpha,
         }
 
         if (num_items > 0) {
-            
+
             popularity_counts <- rep(0, num_items)
             # Calculate popularity of items based on the last choices of agents
             for (i in 1:N) {
+                agent_repertoires[[i]] <- current_repertoires[[i]]
                 idx <- (t - 1) * N + i
                 last_choice <- output$last_choice[idx][[1]]
                 if (last_choice == 0) next
@@ -244,7 +246,6 @@ Diffusion_with_SFL <- function(N, alpha,
             items_df$popularity <- popularity
 
             for (i in 1:nrow(items_df)) {
-                decay_rate <- 0.005
                 items_df$novelty[i] <- pmax(items_df$novelty[i] - decay_rate, 0)
             }
         }
